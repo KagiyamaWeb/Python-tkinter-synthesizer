@@ -1,0 +1,2 @@
+A fun little project to see how to generate cool sounds. Not exactly optimized but it works I guess.
+For now the modulation is hardcoded, I really sould add a way to experiment with modulation to GUI but it's too much to ask for.
