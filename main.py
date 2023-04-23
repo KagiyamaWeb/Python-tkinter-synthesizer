@@ -1,12 +1,12 @@
 import json
 import numpy as np
 
-from tkinter import Tk, Label, Button
+from tkinter import Tk, Label, Button, StringVar, OptionMenu
 from notes.notelist import notelist
 from pygame import mixer
 import pygame as pg
 
-from synth_piano import piano, saw_synth, synth, organ
+from synth_piano import SynthPresets
 from consts import BUFFER, SAMPLE_RATE, DURATION
 
 
@@ -15,31 +15,45 @@ window.title('KagiPiano')
 window.geometry("1640x800") 
 font = ('calibre', 10, 'normal')
 
+
 lbl = Label(window, font=("Arial", 12))
 lbl.grid(columnspan=4, row=0, sticky="w")
 
-mixer.init()
 
-bkey_row = 2
-wkey_row = 3
+mixer.init(buffer=BUFFER)
 
-key_width = 4
-key_height = 10
+
+presets = ["saw_synth", "synth", "organ"]
+preset = StringVar(window)
+preset.set(presets[0])      
+
+presets_menu = OptionMenu(window, preset, *presets)
+presets_menu.grid(column=0, row=4, sticky="sw")
 
 
 def play_sound(note: str):
     with open('notes/notes.json', 'r') as f:
         notes_dict = json.load(f)
 
-    print(note)
     freq = notes_dict[note][0]
-    gen = saw_synth(freq)
+    preset_choice = preset.get()
+    gen = getattr(SynthPresets, preset_choice)(freq)
     iter(gen)
-    sound = [next(gen) * 32767  for _ in range(int(SAMPLE_RATE * DURATION))]
-    sound = np.asarray([sound, sound]).T.astype(np.int16)
-    sound = pg.sndarray.make_sound(sound.copy())
+    sound = np.zeros((int(SAMPLE_RATE * DURATION), 2), dtype=np.int16)
+    for i in range(int(SAMPLE_RATE * DURATION)):
+        sample = next(gen) * 32767
+        sound[i] = sample, sample
+
+    sound = pg.sndarray.make_sound(sound)
     sound.set_volume(0.13)
     sound.play()
+
+
+bkey_row = 2
+wkey_row = 3
+
+key_width = 4
+key_height = 10
 
 column = 0
 for i in range(24, 51):
